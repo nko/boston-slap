@@ -1,0 +1,13 @@
+{
+  "name": "nodudio",
+  "description": "A HTML5 audio manager.",
+  "version": "0.0.1",
+  "author": "Tim Smart",
+  "engine": [ "node >=0.2.0" ],
+  "dependencies": {
+    "biggie-router": ">=0.1.10"
+  },
+  "bin": {
+    "nodudio": "./server.js"
+  }
+}
