@@ -1,7 +1,7 @@
 var router = new (require('biggie-router'))();
 require('./build/service');
 
-router.addModule('nodudio', './build/api');
+router.addModule('nodudio', __dirname + '/build/api');
 
 router.get('/').module('gzip').bind(function (request, response) {
   response.sendBody('Index page.');
