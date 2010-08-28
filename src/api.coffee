@@ -1,5 +1,11 @@
 sys = require 'sys'
 
 module.exports = ->
-  (request, response, next) ->
-    response.sendBody sys.inspect arguments
+  (request, response, next, path) ->
+    response.sendJson
+      result:
+        path: path
+
+respondWith404 = (request, response) ->
+  response.sendBody 404,
+    error: "Resource not found"
