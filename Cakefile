@@ -42,3 +42,8 @@ task 'build', 'Build the ' + APP_NAME + ' from source', ->
       run 'coffee', args
     else if /\.(js|node|addon)$/.test file
       run 'cp', [fullPath, BUILD_DIR + '/' + shortPath + file]
+
+task 'deploy', 'Commit changes and deploy to Joyent', ->
+  deploy = exec 'cake build && git push && git push joyent master'
+  deploy.stdout.on 'data', (chunk) ->
+    console.log chunk.toString()
