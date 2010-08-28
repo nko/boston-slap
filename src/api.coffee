@@ -7,5 +7,5 @@ module.exports = ->
         path: path
 
 respondWith404 = (request, response) ->
-  response.sendBody 404,
+  response.sendJson 404,
     error: "Resource not found"

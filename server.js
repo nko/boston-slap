@@ -3,8 +3,9 @@ require('./build/service');
 
 router.addModule('nodudio', __dirname + '/build/api');
 
-router.get('/').module('gzip').bind(function (request, response) {
-  response.sendBody('Index page.');
+router.get('/').module('gzip').bind(function (request, response, next) {
+  request.url = 'index.html';
+  next();
 });
 
 router.get(/^\/.*\.(js|css|html).*$/).module('gzip');

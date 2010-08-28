@@ -2,6 +2,7 @@ fs           = require 'fs'
 path         = require 'path'
 exec         = require('child_process').exec
 coffeescript = require 'coffee-script'
+Package      = require('node-asset').Package
 
 APP_NAME    = 'nodudio'
 COFFEE_ARGS = ['--no-wrap', '-c']
@@ -42,6 +43,17 @@ task 'build', 'Build the ' + APP_NAME + ' from source', ->
       run 'coffee', args
     else if /\.(js|node|addon)$/.test file
       run 'cp', [fullPath, BUILD_DIR + '/' + shortPath + file]
+
+task 'build:client', 'Build client coffee', ->
+  coffee_package = new Package 'public/js/all.js', [
+    'assets/coffee'
+  ],
+    type:     'coffee'
+    wrap:     yes
+    compile:  no
+    compress: no
+    watch:    no
+  coffee_package.serve()
 
 task 'deploy', 'Commit changes and deploy to Joyent', ->
   deploy = exec 'cake build && git add -A && git commit -m "Deploy" && git push && git push joyent master'
