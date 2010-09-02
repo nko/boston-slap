@@ -41,7 +41,7 @@ task 'build', 'Build the ' + APP_NAME + ' from source', ->
       args = Array::slice.call COFFEE_ARGS
       args.push.apply args, ['-o', BUILD_DIR + '/' + shortPath, fullPath]
       run 'coffee', args
-    else if /\.(js|node|addon)$/.test file
+    else if /\.(js|node|addon|py)$/.test file
       run 'cp', [fullPath, BUILD_DIR + '/' + shortPath + file]
 
 task 'build:client', 'Build client coffee', ->

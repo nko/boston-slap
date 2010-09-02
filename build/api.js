@@ -10,7 +10,7 @@ module.exports = function() {
   };
 };
 respondWith404 = function(request, response) {
-  return response.sendBody(404, {
+  return response.sendJson(404, {
     error: "Resource not found"
   });
 };

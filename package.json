@@ -5,7 +5,8 @@
   "author": "Tim Smart",
   "engine": [ "node >=0.2.0" ],
   "dependencies": {
-    "biggie-router": ">=0.1.10"
+    "biggie-router": ">=0.1.10",
+    "id3": ">=0.0.1"
   },
   "bin": {
     "nodudio": "./server.js"
