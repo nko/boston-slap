@@ -1,0 +1,6 @@
+[submodule "deps/redis"]
+	path = deps/redis
+	url = http://github.com/antirez/redis.git
+[submodule "deps/redis-client"]
+	path = deps/redis-client
+	url = http://github.com/fictorial/redis-node-client.git

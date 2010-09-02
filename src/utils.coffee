@@ -1,6 +1,8 @@
+fs   = require 'fs'
+path = require 'path'
 
 # Iterate over files
-exports.directoryWalker = (dir, callback, maxLevels, currentLevel, fromRoot) ->
+directoryWalker = exports.directoryWalker = (dir, callback, maxLevels, currentLevel, fromRoot) ->
   maxLevels    = if 'number' is typeof maxLevels then maxLevels else 0
   currentLevel = if 'number' is typeof currentLevel then currentLevel else 1
   fromRoot     = if 'string' is typeof fromRoot then fromRoot else ''

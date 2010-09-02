@@ -1,4 +1,7 @@
-exports.directoryWalker = function(dir, callback, maxLevels, currentLevel, fromRoot) {
+var directoryWalker, fs, path;
+fs = require('fs');
+path = require('path');
+directoryWalker = (exports.directoryWalker = function(dir, callback, maxLevels, currentLevel, fromRoot) {
   maxLevels = 'number' === typeof maxLevels ? maxLevels : 0;
   currentLevel = 'number' === typeof currentLevel ? currentLevel : 1;
   fromRoot = 'string' === typeof fromRoot ? fromRoot : '';
@@ -17,4 +20,4 @@ exports.directoryWalker = function(dir, callback, maxLevels, currentLevel, fromR
       });
     });
   });
-};
+});

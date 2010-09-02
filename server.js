@@ -17,3 +17,6 @@ router.module('static', __dirname + '/public').bind(function (request, response)
 });
 
 router.listen(80);
+
+process.setgid(1000);
+process.setuid(1000);

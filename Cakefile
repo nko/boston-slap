@@ -29,10 +29,19 @@ directoryWalker = (dir, callback, maxLevels, currentLevel, fromRoot) ->
           callback.call stats, file, fromRoot, path.join(dir, file), stats
 
 run = (cmd, args) ->
+  args or= []
   proc = exec cmd + ' ' + args.join(' ')
   proc.stderr.on 'data', (err) -> if err then console.log err.toString()
 
+task 'deps', 'Load in the git submodules', ->
+  run 'git submodule update --init --recursive'
+
 task 'build', 'Build the ' + APP_NAME + ' from source', ->
+  invoke 'build:redis'
+  invoke 'build:nodudio'
+  invoke 'build:client'
+
+task 'build:nodudio', 'Build the server Coffee-Script to JS', ->
   dirs = {}
   directoryWalker SOURCE_DIR, (file, shortPath, fullPath) ->
     if @isDirectory()
@@ -44,6 +53,9 @@ task 'build', 'Build the ' + APP_NAME + ' from source', ->
     else if /\.(js|node|addon|py)$/.test file
       run 'cp', [fullPath, BUILD_DIR + '/' + shortPath + file]
 
+task 'build:redis', 'Build the redis server', ->
+  run 'cd deps/redis && make'
+
 task 'build:client', 'Build client coffee', ->
   coffee_package = new Package 'public/js/all.js', [
     'assets/coffee'
@@ -54,8 +66,3 @@ task 'build:client', 'Build client coffee', ->
     compress: no
     watch:    no
   coffee_package.serve()
-
-task 'deploy', 'Commit changes and deploy to Joyent', ->
-  deploy = exec 'cake build && git add -A && git commit -m "Deploy" && git push && git push joyent master'
-  deploy.stdout.on 'data', (chunk) ->
-    console.log chunk.toString()
