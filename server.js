@@ -1,7 +1,9 @@
-var router = new (require('biggie-router'))();
+var router = new (require('biggie-router'))(),
+    io     = require('socket.io'),
+    config = require('./build/config');
 require('./build/service');
 
-router.addModule('nodudio', __dirname + '/build/api');
+router.addModule('nodudio', __dirname + '/build/rest');
 
 router.get('/').module('gzip').bind(function (request, response, next) {
   request.url = 'index.html';
@@ -16,7 +18,9 @@ router.module('static', __dirname + '/public').bind(function (request, response)
   response.sendBody(404, 'Asset not found: ' + request.url);
 });
 
-router.listen(80);
+router.listen(config.http_port);
+
+var socket = exports.socket = io.listen(router);
 
 process.setgid(1000);
 process.setuid(1000);

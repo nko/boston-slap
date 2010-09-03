@@ -7,18 +7,18 @@ class Song extends Base
   properties: [
     'title',       'album_id',   'artist_id'
     'artist_name', 'album_name', 'genre'
-    'rating',      'mtime'
+    'rating',      'mtime',      'path'
   ]
 
   save: (path, cb) ->
     if not cb
       cb   = path
       path = null
-    super (error, id) =>
+    super (error, song) =>
       return cb error if error
-      if not path then cb null, id
-      else redis.addLink 'path', encodeURI(path), id, (error) ->
+      if not path then cb null, this
+      else redis.addLink 'path', encodeURI(path), @id, (error) ->
         return cb error if error
-        cb null, id
+        cb null, this
 
 module.exports = Song

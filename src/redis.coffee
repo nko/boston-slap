@@ -8,17 +8,42 @@ server = exports.server = spawn config.redis_exec, [config.redis_conf]
 server.stdout.on 'data', (data) -> console.log "[redis] " + data.toString()
 server.stderr.on 'data', (data) -> console.log "[redis] " + data.toString()
 
-client = exports.client = redis.createClient config.redis_port
+client = exports.client = null
+
+callbacks = []
+setTimeout ->
+  client = exports.client = redis.createClient config.redis_port
+  callback() for callback in callbacks
+  callbacks = []
+, 500
+
+exports.onLoad = (callback) ->
+  callbacks.push callback
 
 # Rewrite append onle file every 10 minutes and on startup
-console.log '[redis] Re-writing append-only file'
-client.sendCommand 'BGREWRITEAOF'
+exports.onLoad ->
+  console.log '[redis] Re-writing append-only file'
+  client.sendCommand 'BGREWRITEAOF'
 setInterval ->
   client.sendCommand 'BGREWRITEAOF'
-, 300000
+, config.redis_rewrite * 60 * 1000
 
-exports.delete  = client.del
-exports.hDelete = client.hdel
+process.on 'exit', ->
+  server.kill()
+
+exports.delete  = ->
+  client.del.apply client, arguments
+exports.hDelete = ->
+  client.hdel.apply client, arguments
+
+exports.hSet = ->
+  client.hset.apply client, arguments
+
+exports.keyExists = (key, cb) ->
+  client.exists key, cb
+
+exports.hKeyExists = (hash, key, cb) ->
+  client.hexists hash, 
 
 exports.saveModel = (model, cb) ->
   model_key = keys = null
@@ -33,53 +58,41 @@ exports.saveModel = (model, cb) ->
     for key in keys
       data.push key
       data.push model.data[key]
-    console.dir data
     client.hmset data, afterInsert
+  afterInsert = (error, result) ->
+    return cb error if error
+    client.sadd "collection:#{model.name}", model.id, ->
+    cb null, model
 
   if model.id then insert null, model.id
   else
     is_new = yes
     client.incr "ids:#{model.name}", insert
 
-  afterInsert = (error, result) ->
-    return cb error if error
-    client.sadd "collection:#{model.name}", model.id, ->
-    return client.hkeys model_key, deleteKeys unless is_new
-    cb null, model
-  deleteKeys = (error, result) ->
-    return cb error if error
-    delete_task = new Task
-    for key in keys when result.indexOf(key) isnt -1
-      delete_task.add key, [client.hdel, model_key, key]
-    error = null
-    delete_task.run (task, err) ->
-      error = err if err
-      if not task
-        return cb error if error
-        cb null, model
-
 exports.getModel = (model, id, cb) ->
-  props = model.properties
-  client.hmget "#{model.name}:#{id}", props, (error, result) ->
+  return cb new Error 'id missing' if not id
+  props = ["#{model.name}:#{id}"]
+  props.push.apply props, model.properties
+  client.hmget props, (error, result) ->
     return cb error if error
+    for prop, i in model.properties when result[i]
+      model.set prop, result[i].toString()
+    return cb null, model if Object.keys(model.data).length is 0
     model.id = id
-    for i, prop in props
-      model.set prop, result[i]
     cb null, model
 
 exports.deleteModel = (type, id, cb) ->
-  task = new Task
-    collection: [client.srem, "collection:#{type}", id]
-    model:      [client.del, "#{type}:#{id}"]
-  error = null
-  task.run (task, err) ->
-    error = err if err
-    if not task
-      return cb error if error
-      cb null, true
+  return cb new Error 'id missing' unless id
+  client.srem "collection:#{type}", id, (error, result) ->
+    return cb error if error
+    client.del "#{type}:#{id}", cb
+
+exports.deleteModelField = (model, field, cb) ->
+  return cb new Error 'id missing' unless model.id
+  client.hdel "#{model.name}:#{model.id}", field, cb
 
 exports.addLink = (type, from, to, cb) ->
-  client.hset "link:#{type}", from, to.id, cb
+  client.hset "link:#{type}", from, to, cb
 
 exports.getLink = (type, id, cb) ->
   client.hget "link:#{type}", id, cb
@@ -87,14 +100,20 @@ exports.getLink = (type, id, cb) ->
 exports.deleteLink = (type, id, cb) ->
   client.hdel "link:#{type}", id, cb
 
+exports.linkExists = (type, id, cb) ->
+  client.hexists "link:#{type}", id, cb
+
 exports.addModelLink = (from, to, cb) ->
-  cb new Error 'id missing' if not from.id or to.id
+  return cb new Error 'id missing' unless from.id and to.id
   client.sadd "link:#{from.name}:#{from.id}:#{to.name}", to.id, cb
 
-exports.getModelLinks = (type, model, cb) ->
-  cb new Error 'id missing' if not model.id
+exports.getModelLinks = (model, type, cb) ->
+  return cb new Error 'id missing' unless model.id
   client.smembers "link:#{model.name}:#{model.id}:#{type}", cb
 
-exports.deleteModelLinks = (type, model, cb) ->
-  cb new Error 'id missing' if not model.id
+exports.deleteModelLinks = (model, type, cb) ->
+  return cb new Error 'id missing' unless model.id
   client.del "link:#{model.name}:#{model.id}:#{type}", cb
+
+exports.getCollection = (type, cb) ->
+  client.smembers "collection:#{type}", cb
